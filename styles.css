@@ -22,8 +22,8 @@ body {
 		font-family: Verdana,Arial,Helvetica,"Nimbus Sans L",sans-serif;
 }
 
- #banner {   background: none repeat scroll 0% 0% rgb(103, 148, 48);
-        background-color: none;
+ #banner {   background: none repeat scroll 0% 0% rgb(255,255,255);
+        background-color: rgb#FFF;
         background-image: none;
         background-repeat: repeat;
         background-attachment: scroll;
