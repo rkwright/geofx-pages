@@ -1,0 +1,38 @@
+@charset "UTF-8";
+/* CSS Document */
+body {
+   		margin: 0px;
+        margin-top: 0px;
+        margin-right-value: 0px;
+        margin-bottom: 0px;
+        margin-left-value: 0px;
+        margin-left-ltr-source: physical;
+        margin-left-rtl-source: physical;
+        margin-right-ltr-source: physical;
+        margin-right-rtl-source: physical;
+   		padding: 0px;
+        padding-top: 0px;
+        padding-right-value: 0px;
+        padding-bottom: 0px;
+        padding-left-value: 0px;
+        padding-left-ltr-source: physical;
+        padding-left-rtl-source: physical;
+        padding-right-ltr-source: physical;
+        padding-right-rtl-source: physical;
+		font-family: Verdana,Arial,Helvetica,"Nimbus Sans L",sans-serif;
+}
+
+ #banner {   background: none repeat scroll 0% 0% rgb(103, 148, 48);
+        background-color: none;
+        background-image: none;
+        background-repeat: repeat;
+        background-attachment: scroll;
+        background-position: 0% 0%;
+        background-clip: border-box;
+        background-origin: padding-box;
+        background-size: auto auto;
+}
+
+#normal_div { 
+	margin:25px;
+}
