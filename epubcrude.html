@@ -2,21 +2,151 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-<title>Untitled Document</title>
+<title>epubcrude</title>
 <link href="styles.css" rel="stylesheet" type="text/css" />
 </head>
 
 <body>
 <div id="banner" >
-<div>
-<img src="images/Banner.png" width="1000" height="100" alt="Geo-F/X banner" />
+<img src="images/GeoFX-Pages.png" width="1000" height="100" alt="Geo-F/X banner" />
 </div>
+
+<div style="left: 0px; position: absolute; width:100%; overflow:hidden; height:35px">
+<ul id="nav">
+	<li><a href="index.html">Home</a></li>
+	<li><a href="epubcrude.html">epubcrude</a></li>
+	<li><a href="GMS.html">GMS</a></li>
+	<li><a href="http://www.geofx.com">geofx.com</a></li>
+</ul>
 </div>
 <div id="normal_div">
-<h2>epubcrude</h2>
-<p>epubcrude is an Eclipse plugin and perspective that allows users to create, replace, update, delete and edit EPUB files. epubcrude uses the  IDPF epubchecker 3.0.1 to validate the files.</p>
-<p>This project can be found at gitub <a href="https://github.com/rkwright/epubcrude" title="epubcrude repo">here</a></p>
-<div> </div>
+  <div id="normal_div2">
+    <div id="normal_div3">
+      <div id="normal_div4">
+        <div id="normal_div5">
+          <div id="normal_div6">
+            <div id="normal_div7">
+              <div id="normal_div8">
+                <h1>epubcrude</h1>
+                <h3>Overview</h3>
+                <p>epubcrude is an Eclipse plugin and perspective that allows users to create, replace, update, delete and edit EPUB files. epubcrude uses the  IDPF epubchecker 3.0.1 to validate the files. Note that epubcrude is NOT a WYSIWYG editor. The Readium Core doesn't underly it oranything like it. To see what an EPUB looks like after creation or editing, you'll need to open it in a compliant EPUB Reader. I'll look into making this easier in the future, but for now it's just an easy way to check for errors and problems in your EPUB files and then fix them.</p>
+                <p>Note: Many thanks to the excellent engineers who wrote EPUBCheck, including </p>
+                <ul>
+                  <li>Peter Sorotokin </li>
+                  <li>Garth Conboy </li>
+                  <li>Markus Gylling </li>
+                  <li>Piotr Kula </li>
+                  <li>Paul Norton </li>
+                  <li>Jessica Hekman </li>
+                  <li>Liza Daly </li>
+                  <li>George Bina </li>
+                  <li>Bogdan Iordache </li>
+                  <li>Romain Deltour </li>
+                  <li>Thomas Ledoux </li>
+                  <li>Tobias Fischer </li>
+                </ul>
+                <h3>Building the plugin</h3>
+                <p>The epubcrude project is hosted on github. The project can be found at gitub <a href="https://github.com/rkwright/epubcrude" title="epubcrude repo">here</a>. </p>
+                <p>To build, run, debug etc. the plugin yourself:</p>
+                <ul>
+                  <li>clone the project from the github repo</li>
+                  <li>import the two Eclipse projects into Eclipse (tested with Eclipse 3.7 and 4.3 - should work in others back to Eclipse 3.5 but not tested. Eclipse 4.3 is recommended since the older version's updater is sometimes a little flaky)</li>
+                  <li>launch a new configuration as the workbench</li>
+                  <li>follow the instructions below in &quot;Using epubcrude&quot;</li>
+                </ul>
+                <h3>Installing the plugin</h3>
+                <p>If you don't want to build the plugin yourself, then you need to install it. Installation is through the standard Eclipse Update Manager. The procedure is as follows:</p>
+                <ul>
+                  <li>Install Eclipse if you haven't already. The current version is <a href="#" title="Kepler download">Eclipse 4.3 (Kepler)</a>. Install the standard version.</li>
+                  <li>Note: When you first start Eclipse it will prompt you for a &quot;workspace&quot;. This is essentially a folder where Eclipse keeps all your projects and associated assets. You can put it pretty much anywhere. Eclipse will offer to put it in your Documents folder. Personally, I prefer to create workspace that is specific to the project I happen to be working on - you can have as many workspaces as you want. But it's a personal choice.</li>
+                  <li>Once Eclipse is installed, you should install the XML tools if you haven't already:
+                    <ul>
+                      <li>Go to the Eclipse Help menu and select the item &quot;Install New Software...&quot;</li>
+                      <li>Select the dropdown and one entry should be &quot;Kepler - http://download.eclipse.org/releases/kepler&quot;. Select that. If you have an older version of Eclipse the name and version number will be different - that's OK.</li>
+                      <li>You'll see &quot;Pending...&quot; for a bit then a whole slew of choices will appear. Scroll way down to &quot;  Web, XML, Java EE and OSGi Enterprise Development	&quot; Open that then scroll down to &quot;    Eclipse XML Editors and Tools&quot;. Select that then choose &quot;Next&quot;.</li>
+                      <li>If there are problems Eclipse will tell you about them - shouldn't be (FLW). Choose Next again then agree to the terms of the License.</li>
+                      <li>Now choose Finish and Eclipse will chew away, downloading and installing everything</li>
+                      <li>You will be prompted to re-start Eclipse. Do that.</li>
+                    </ul>
+                  </li>
+                  <li>Now you can install epubcrude itself:
+                    <ul>
+                      <li>Go back to the Help menu and choose &quot;Install New Software...&quot; again.</li>
+                      <li>This time, choose the button that says &quot;Add...&quot; which presents the &quot;New Update Site&quot; dialog</li>
+                      <li>In the name field, enter something reasonable like &quot;epubcrude Update Site&quot;</li>
+                      <li>In the web address field, enter <em>http://www.geofx.com/epubcrude</em></li>
+                      <li>Press OK and Eclipse should show &quot;Pending&quot; for a moment, then an entry &quot;epub tools&quot;. If you choose the twisty you'll see the only entry is &quot;epubcrude&quot;. Click either of the boxes to select epubcrude.</li>
+                      <li>Again, press &quot;Next&quot;. There should be no errors, so press &quot;Next&quot; again, agree to the license terms (the standard Eclipse license) then Finish.</li>
+                      <li>epubcrude should then be downloaded and installed. Again, you'll be prompted to re-start Eclipse, do so.</li>
+                      <li>That's it. Now you can start using epubcrude.</li>
+                    </ul>
+                  </li>
+                </ul>
+                <h3> Using epubcrude </h3>
+                <p>Using epubcrude is pretty easy, though there are some quirks (and no doubt a slew of bugs I haven't found). There will eventually be several ways to use it, but at present there is really just one way:</p>
+                <ul>
+                  <li>Switch to the epubcrude perspective by selecting Window/Open Perspective/Other...</li>
+                  <li>One of the choices will be &quot;epubcrude&quot; with the little EPUB logo. Choose that one.</li>
+                  <li>Eclipse will then arrange the various windows to look like this:</li>
+                </ul>
+                <p><img src="images/epubcrude_perspective.jpg" width="820" height="615" alt="epubcrude perspective" /></p>
+                <ul>
+                  <li>Either from the File menu or by right-clicking in the project window and selectin New/Other.</li>
+                  <li>There will be an entry for epubcrude. Open the twisty and select that entry then press Next</li>
+                  <li>You will be prompted to name your project. Give it some reasonable name (if it conflicts with an existing project, Eclipse will complain). Press Next</li>
+                  <li>Here there will eventually be several choices (import existing EPUB, import exploded EPUB, import raw HTML, create new EPUB) but right now you only have one choice, so just press Next.</li>
+                  <li>Now import the EPUB you would like work with.
+                    <ul>
+                      <li>What happens next is that epubcrude opens the EPUB file, extracts all the contents into a folder under the name of the project in your workspace folder, then creates a new copy of the EPUB in that same folder.</li>
+                      <li>So in the current version, your original isn't touched but a new <em><strong>copy</strong></em> is created</li>
+                    </ul>
+                  </li>
+                  <li>Eclipse will then show you a view like this:</li>
+                </ul>
+                <p><img src="images/epubcrude_alice.jpg" width="822" height="762" alt="epubcrude with alice loaded" /></p>
+                <ul>
+                  <li>Note that the contents of the file are shown in the project tree on the left. You can open any of the files by simply double-clicking on it.</li>
+                  <li>When you open a file, the contents will be shown in the main (tabbed) window. An &quot;outline&quot; (a navigable tree) will be shown in the right-most window.</li>
+                  <li>At the bottom is the &quot;Problems&quot; tab, where all the warnings and errors (and exceptions) found by EPUB check will be shown.
+                    <ul>
+                      <li>As you can see in the image above &quot;Alice&quot; has a slew of them</li>
+                    </ul>
+                  </li>
+                  <li>You can navigate to each of these problems or warnings by double-clicking in the probelms window. Note that the same markers are shown in the project view on the left. </li>
+                  <li>When you double-click, Eclipse will open that file and navigate to that location. If you hover over the error or warning, a popup will appear with the same info as in the problems pane.</li>
+                  <li>If you then go ahead and edit the file and fix the problem, Eclipse will
+                    <ul>
+                      <li>detect that you have made that change</li>
+                      <li>rebuild the EPUB file</li>
+                      <li>re-run EPUBCheck and update all the warnings and errors - hopefully without the one you thought you just fixed...</li>
+                    </ul>
+                  </li>
+                  <li>A couple of tips:
+                    <ul>
+                      <li>Eclipse will show all the problems for ALL open projects, so it may sometimes be convenient to &quot;Close&quot; all problems with problems except the one you are working on</li>
+                      <li>Once you have fixed all the problems you'll have to go find the &quot;Fixed&quot; EPUB and copy it to wherever. epubcrude should help you there - another pending feature.</li>
+                    </ul>
+                  </li>
+                </ul>
+                <p>If you find any problems or have suggestions, feel free to send them to me directly <a href="mailto:(rkwright@geofx.com">(rkwright@geofx.com</a>)or enter an issue on the github site.</p>
+              </div>
+              <h3>Updates to epubcrude</h3>
+              <p>I should be making periodic updates to epubcrude to fix bugs, add new features, etc. To get the new new features depends on whether you cloned the repo or just installed the plugin. If you cloned the plugin, just pull from the repo.</p>
+              <p>If you installed the plugin via Eclipse, updating is easy:</p>
+              <ul>
+                <li>Go to Eclipse/Help/Check for Updates...</li>
+                <li>Eclipse will scan through all of it's updates, including epubcrude. </li>
+                <li>If there is an update to epubcrude (or any other plugin) Eclipse will tell you about it and offer to update it. </li>
+                <li>If you agree, Eclipse will download and install the plugin(s) automatically then prompt you to re-start. That's it.</li>
+              </ul>
+            </div>
+            <p>&nbsp;</p>
+          </div>
+        </div>
+        <p>&nbsp;</p>
+      </div>
+    </div>
+  </div>
 </div>
 </body>
 </html>
