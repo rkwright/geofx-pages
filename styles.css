@@ -20,6 +20,7 @@ body {
         padding-right-ltr-source: physical;
         padding-right-rtl-source: physical; */
 		font-family: Verdana,Arial,Helvetica,"Nimbus Sans L",sans-serif;
+		font-size:14px;
 }
 
  #banner {   background: none repeat scroll 0% 0% rgb(255,255,255);
@@ -70,3 +71,18 @@ body {
 #nav li a:hover {
 	color: #fff;
 	background-color: rgb(153,192,203); }
+
+pre
+	{
+	background: #FFFFcc;
+	border: solid 1px;
+	padding-top: 1pt;
+	padding-left: 3pt;
+	padding-right: 3pt;
+	padding-bottom: 1pt;
+	margin-right: 1%;
+	margin-left: 1%;
+	margin-top: 0.25em;
+	margin-bottom: 0.25em;
+	border-color: rgb(204,204,204);
+	}

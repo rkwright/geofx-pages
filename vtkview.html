@@ -26,19 +26,27 @@
 <p><strong>Explorations of VTK</strong></p>
 <p>Over the past couple of years, I experimented with creating a  Java-based system for modeling  scientific processes, particularly those  related to geographic systems.  I developed a nice visualization system  in Eclipse with Postscript style graphics.  The modeling was based on a  system that was somewhat similar to VTK (which I experimented with  several years ago) but using Java reflection to dynamically load and  link in the user&rsquo;s model components.</p>
 <p>While it was somewhat successful, it was a LOT of work and I never  had the time to really complete it or document it properly.  So it just  sort of languished.  Recently, I felt like I wanted to work on it some  more but when I looked at the complexity of it, I sort of quailed.</p>
-<p>So I decided to take another look at VTK.  I found that it is still  being actively supported, with version 6.0.0 having been recently  released.  It had Java wrappers and some form of support for Eclipse –  both of which were pluses for me.  So I decided to give it another  whirl.</p>
+<p>So I decided to take another look at VTK.  I found that it is still  being actively supported, with version 6.0.0 having been recently  released.  It had Java wrappers and some form of support for Eclipse –  both of which were pluses for me.  So I decided to give it another  whirl. What I ran into was the classic, somewhat unevenly documented open-source effort. I'm not trying to be critical here - the problems I ran into re-emphasized my own failings in having Readium documented the way it should be. But I thought it was worth documenting the process.</p>
 <p><strong>Download</strong></p>
-<p>First off I downloaded the latest version, 6.0.0, for OSX.  Simple  enough, but it was immediately apparent that this was not going to be a  simple process as it was only available as source and it was clearly  quite complex.  Oh well, I thought, how hard can it be to build it.  Ha.</p>
+<p>First step is to download the latest (currently, 6.0.0), from <a href="http://www.vtk.org/VTK/resources/software.html#latest" title="VTK.org downloads">here</a>.  I downloaded the source, data and documentation. All platforms are included or, more accurately, since the VTK is built from source, all the sources are available to build on any of the supported platforms. In my case, my primary OS is OSX (10.8.4 at the moment). I'll try to reproduce this all on my Windows box at some point, but not right now.</p>
 <p><strong> Install</strong></p>
-<p>So the first question was installation.  That wasn&rsquo;t too bad, the  packages came a tar.gz so I just unpacked them following the  instructions I found on the VTK site.  This is when the first tremors of  unease arrived.  VTK has been around a long time and supports many  platforms and is open-source so there have been a lot of cooks.</p>
-<p>One of the results of this is that there are numerous (sometimes  innumerable) ways of doing anything with VTK.  And some work with older  versions but not newer ones (there&rsquo;s that wonderful word &lsquo;deprecated&rsquo;).   For example,  VTK is built by running a utility named ccmake which  reads a (huge) series of scripts and from those scripts it builds the  actual make file.</p>
-<p>So first step is to download and install ccmake.  Easy enough. Now,   it turns that there are (at least) two ways of using ccmake – command  line and GUI.   Naturally the documentation isn&rsquo;t too clear on which is  better than the other.  And, up until some recent date, there wasn&rsquo;t a  GUI for OSX.  So if you start googling around you will get conflicting  info.</p>
+<p>The  packages came a tar.gz so I just unpacked them following the  instructions I found on the VTK site.  This is when the first tremors of  unease arrived.  VTK has been around a long time and supports many  platforms and is open-source so there have been a lot of cooks.</p>
+<p>One of the results of this is that there are numerous (sometimes  innumerable) ways of doing anything with VTK.  And some work with older  versions but not newer ones (there&rsquo;s that wonderful word &lsquo;deprecated&rsquo;).   For example,  VTK is built by running a utility named ccmake which  reads a (huge) tree of scripts and from those scripts it builds the  actual make file.</p>
+<p>So first step is to download and install ccmake.  Easy enough. Now,   it turns that there are (at least) two ways of using ccmake – command  line and GUI.   Naturally the documentation isn&rsquo;t too clear on which is  better than the other - YMMV, eh?  And, up until some recent date, there wasn&rsquo;t a  GUI for OSX.  So if you start googling around you will get conflicting  info.</p>
 <p>I experimented with both, but got different errors from both of  them.  I finally decided to try and sort out what was wrong with the GUI  version since others seemed to eventually resolve their problems with  it.</p>
 <p>The errors I was seeing were missing Java INCLUDE paths, particularly  JAVA_INCLUDE_PATH, JAVA_INCLUDE_PATH2 and JAVA_AWT_INCLUDE_PATH.  This  seemed odd to me because on OSX the Java is virtually always installed  in exactly the same place (/Library/Java) so why was the system  complaining?  Worse, I knew where those paths should point but had no  idea where to set those variables.</p>
 <p>Back to Google. Hunting for a while I saw that a couple of people  suggested there was a long-standing bug in which the command to search  for the right paths is missing from one of the multitude of   CMakeLists.txt files, which are the ccmake scripts.  In particular, the  CMakeLists.txt file in the root of the VTK install was missing the  lines:</p>
-<pre>#-------- added by RKW ----------------------------------- <br />find_package(JNI) <br />if (JNI_FOUND) <br />message (STATUS &quot;JNI_INCLUDE_DIRS=${JNI_INCLUDE_DIRS}&quot;) <br />message (STATUS &quot;JNI_LIBRARIES=${JNI_LIBRARIES}&quot;) <br />endif()</pre>
+
+<pre>
+#-------- added by RKW -----------------------------------
+find_package(JNI) 
+if (JNI_FOUND)
+    message (STATUS &quot;JNI_INCLUDE_DIRS=${JNI_INCLUDE_DIRS}&quot;)
+    message (STATUS &quot;JNI_LIBRARIES=${JNI_LIBRARIES}&quot;)
+endif()</pre>
+ 
 <p>I added these lines tried to run ccmake again by deleting the  &ldquo;cache&rdquo;, then resetting the configuration to Eclipse/Unix Makefiles.  That seemed to fix the first error, but now it complained that &ldquo;make&rdquo;  couldn&rsquo;t be found.  Really?  Then  I realized this might be true as I  was using my old Mac Pro which had a new version of XCode (4.6) and  Apple has decided that command-line tools are old-fashioned and  shouldn&rsquo;t be installed by default.  <img src="http://blogs.geofx.com/wp-includes/images/smilies/icon_smile.gif" alt=":-)" /></p>
-<p>So I told XCode to install those old-fashioned tools and tried  again.  This time it seemed to work, except I had requested the docs be  built, but it couldn&rsquo;t find Doxygen.  Don&rsquo;t know why as it IS installed,  but whatever.  I unchecked &ldquo;Create Documentation&rdquo; and re-ran ccmake.   Mirabile dictu it ran and ran and (apparently) did generate the  makefile.</p>
+<p>So I told XCode to install those old-fashioned tools and tried  again.  This time it seemed to work, except I had requested the docs be  built, but it couldn&rsquo;t find Doxygen.  Don&rsquo;t know why as it IS installed,  but whatever.  I unchecked &ldquo;Create Documentation&rdquo; and re-ran ccmake.   <em>Mirabile dictu</em> it ran and ran and (apparently) did generate the  makefile.</p>
 <p>However, an interesting factoid came up when I looked again at the  CMakeLists.txt file in the root of the VTK.  The lines I had added about  find_package(JNI) had disappeared.  Yet it apparently ran  successfully.  Whether this is because somehow the missing make created  the missing include Java files error (doubtful) or running the process  copied the necessary JNI search somewhere else, I have no idea.  But my  life is too short to search for that which I don&rsquo;t have to.</p>
 <p>So then I ran in the make file and amazingly, it ran and ran and ran  and apparently built the VTK libraries.  Looking in my VTK-Build tree in  bin and lib revealed all sorts of binary apps and libraries.  Hooray.   Maybe now I can run &ldquo;Hello World&rdquo;</p>
 <p><strong>Running  a VTK Sample</strong></p>
@@ -57,10 +65,27 @@
     System.loadLibrary(&quot;vtkGraphicsJava&quot;);     
     System.loadLibrary(&quot;vtkRenderingJava&quot;);   
 }</pre>
-<p>I tried that but none of the names was correct.  &ldquo;Can&rsquo;t find  vtkCommonJava&rdquo;, etc.  Checking the  lib folder, sure enough there was no  such library.  Hmm.  Maybe with version 6.0.0 they have changed the way  libraries were loaded.  I finally spelunked through the samples in the  VTK folder and found a simple example of a cone.  And, sure enough the  structure of the code was pretty radically different.  &lsquo;</p>
+<p>I tried that but none of the names was correct.  &ldquo;Can&rsquo;t find  vtkCommonJava&rdquo;, etc.  Checking the  lib folder, sure enough there was no  such library.  Hmm.  Maybe with version 6.0.0 they have changed the way  libraries were loaded.  I finally spelunked through the samples in the  VTK folder and found a simple example of a cone.  And, sure enough the  structure of the code was pretty radically different.  </p>
+<pre>
+private void loadLibraries()
+{
+    if (!vtkNativeLibrary.LoadAllNativeLibraries())
+    {
+        for (vtkNativeLibrary lib : vtkNativeLibrary.values())
+        {
+            if (!lib.IsLoaded())
+            {
+                System.err.println(lib.GetLibraryName() + &quot; not loaded&quot;);
+            }
+        }
+     }
+     vtkNativeLibrary.DisableOutputWindow(null);
+}</pre>
 <p>So I chucked the first sample, pasted in the new code and tried again. Hallelujah!  It worked:</p>
-<p><a href="http://blogs.geofx.com/wp-content/uploads/2013/08/SimpleVTK.jpg"><img title="SimpleVTK" src="images/vtkview_0.jpg" alt="Simple VTK - Cone" height="450" width="600" /></a></p>
+<p><a href="http://blogs.geofx.com/wp-content/uploads/2013/08/SimpleVTK.jpg"><img title="SimpleVTK" src="images/SimpleVTK.jpg" alt="Simple VTK - Cone" height="400" width="400" /></a></p>
 <p>So it was a convoluted journey but I got there.  Would have been nice  if there had been a step by step tutorial for OSX with 6.0.0 but then I  wouldn&rsquo;t have learned as much, eh?</p>
+<p>But this is all very well, but all it does is verify that one can install VTK, build it and run the &quot;Hello World&quot; of VTK. But what I want to do is develop apps within Eclipse that allow me to do my GIS modeling. So this is step one, but there's lots left. So the next step is to create a VTK View inside Eclipse itself. So...</p>
+<p>Next Chapter: Creating a VTK View in Eclipse</p>
 <p>&nbsp;</p>
 <div> </div>
 </div>
