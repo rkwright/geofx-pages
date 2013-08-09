@@ -39,6 +39,14 @@ body {
 	 top:50px;
 }
 
+#textbox_div { 
+	 margin:4em;
+	 position: relative; 
+	 top:2 em;
+	 float: left;
+	 width: 30em;
+}
+
 #nav {
 	width: 100%;
 	float: left;
