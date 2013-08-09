@@ -1,7 +1,7 @@
 @charset "UTF-8";
 /* CSS Stylers for the geofx-pages */
 body {
-   		margin: 0px;
+   		/*margin: 0px;
         margin-top: 0px;
         margin-right-value: 0px;
         margin-bottom: 0px;
@@ -18,7 +18,7 @@ body {
         padding-left-ltr-source: physical;
         padding-left-rtl-source: physical;
         padding-right-ltr-source: physical;
-        padding-right-rtl-source: physical;
+        padding-right-rtl-source: physical; */
 		font-family: Verdana,Arial,Helvetica,"Nimbus Sans L",sans-serif;
 }
 
@@ -34,9 +34,10 @@ body {
 }
 
 #normal_div { 
-	margin:25px;
+	 margin:3em;
 	 position: relative; 
-	 top:50px;
+	 top:2em;
+	 width:60em;
 }
 
 #textbox_div { 
