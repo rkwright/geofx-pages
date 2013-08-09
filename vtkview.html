@@ -67,14 +67,10 @@ endif()</pre>
 }</pre>
 <p>I tried that but none of the names was correct.  &ldquo;Can&rsquo;t find  vtkCommonJava&rdquo;, etc.  Checking the  lib folder, sure enough there was no  such library.  Hmm.  Maybe with version 6.0.0 they have changed the way  libraries were loaded.  I finally spelunked through the samples in the  VTK folder and found a simple example of a cone.  And, sure enough the  structure of the code was pretty radically different.  </p>
 <pre>
-private void loadLibraries()
-{
-    if (!vtkNativeLibrary.LoadAllNativeLibraries())
-    {
-        for (vtkNativeLibrary lib : vtkNativeLibrary.values())
-        {
-            if (!lib.IsLoaded())
-            {
+private void loadLibraries()  {
+    if (!vtkNativeLibrary.LoadAllNativeLibraries()) {
+        for (vtkNativeLibrary lib : vtkNativeLibrary.values()) {
+            if (!lib.IsLoaded()) {
                 System.err.println(lib.GetLibraryName() + &quot; not loaded&quot;);
             }
         }
@@ -85,7 +81,7 @@ private void loadLibraries()
 <p><a href="http://blogs.geofx.com/wp-content/uploads/2013/08/SimpleVTK.jpg"><img title="SimpleVTK" src="images/SimpleVTK.jpg" alt="Simple VTK - Cone" height="400" width="400" /></a></p>
 <p>So it was a convoluted journey but I got there.  Would have been nice  if there had been a step by step tutorial for OSX with 6.0.0 but then I  wouldn&rsquo;t have learned as much, eh?</p>
 <p>But this is all very well, but all it does is verify that one can install VTK, build it and run the &quot;Hello World&quot; of VTK. But what I want to do is develop apps within Eclipse that allow me to do my GIS modeling. So this is step one, but there's lots left. So the next step is to create a VTK View inside Eclipse itself. So...</p>
-<p>Next Chapter: Creating a VTK View in Eclipse</p>
+<p><a href="vtkview_1.html" title="Creating a VTK View Inside Eclipse">Next Chapter: Creating a VTK View in Eclipse</a></p>
 <p>&nbsp;</p>
 <div> </div>
 </div>
