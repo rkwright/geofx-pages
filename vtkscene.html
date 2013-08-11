@@ -23,93 +23,9 @@
 
 <div id="normal_div">
 <h2>vtkview</h2>
-<p><strong>Creating a VTK View Inside Eclipse</strong></p>
-<p>Creating a &quot;view&quot; in Eclipse isn't too hard. But there are a few tricks here and there, so it's worth running through how to build the simplest view using VTK to render the model.</p>
-<p>The first step is to use Eclipse' wizards to create a sample project.</p>
-<p>In Eclipse, choose File/New -&gt; Project...</p>
-<p>Select &quot;Plugin Project Development&quot; then &quot;Plug-in Project...&quot;</p>
-<p>You'll be presented with a dialog asking for a name, specify something (I often go with &quot;Zot&quot; :-) </p>
-<p><img src="images/Plugin_Wizard_1.jpg" width="400" height="477" alt="First step in the plugin wizard" /></p>
-<p>Then choose next:</p>
-<p><img src="images/Plugin_Wizard_2.jpg" width="400" height="477" alt="Plugin wizard, step 2" /></p>
-<p>Finallly, choose next again to see the wizard choices:</p>
-<p><img src="images/Plugin_Wizard_3.jpg" width="400" height="477" alt="Plugin wizard, step 3" /></p>
-<p>Choose a simple plugin with a view. In fact, Eclipse will add some other  code we don't need (having to do with help contexts) but that's OK, we'll just delete it. I strongly encourage you to go back and build/examine all the various examples, but for now let's stick with what we need.</p>
-<p>The resulting plugin is very simple. There are only two source code files and the plugin.xml file. The plugin.xml looks like this:</p>
-<pre>
-&lt;plugin&gt;
-     &lt;extension point=&quot;org.eclipse.ui.views&quot;&gt;
-         &lt;category name=&quot;VTK Views&quot; id=&quot;com.geofx.vtk.view&quot;/&gt;
-         &lt;view
-             name=&quot;VTK View&quot;
-             icon=&quot;icons/vtk-logo_16.png&quot;
-             category=&quot;com.geofx.vtk.view&quot;
-             class=&quot;com.geofx.vtk.view.VTKView&quot;
-             id=&quot;vtk_view.views.VTKView&quot;&gt;
-         &lt;/view&gt;
-     &lt;/extension&gt;
-     &lt;extension point=&quot;org.eclipse.ui.perspectiveExtensions&quot;&gt;
-         &lt;perspectiveExtension
-             targetID=&quot;org.eclipse.ui.resourcePerspective&quot;&gt;
-             &lt;view
-                 ratio=&quot;0.5&quot;
-                 relative=&quot;org.eclipse.ui.views.TaskList&quot;
-                 relationship=&quot;right&quot;
-                 id=&quot;vtk_view.views.VTKView&quot;&gt;
-             &lt;/view&gt;
-         &lt;/perspectiveExtension&gt;
-    &lt;/extension&gt;
-&lt;/plugin&gt;
-</pre>
-<p>This just tells Eclipse that you want to create a category called &quot;VTK Views&quot; and you will define one view for it, which will be implemented in a class named VTKView.</p>
-<p>There are two source files: Activator.java and VTKView.java. The Activator is just the single instance startup file. The only change we have to make to it is to add the the method LoadLibraries() to the start() method so our native libraries get loaded.</p>
-<p>The VTK View file is almost as simple. It ony has one real method. It doesn't need a constructor (the default is fine) and the class it is derived from ViewPart, requires a setFocus() method be implemented, but we don't need so just leave it empty. The only method that we need to modify is CreatePartControl:</p>
-<pre>public void createPartControl(Composite parent)
-{ 
-    // some systems have weird rendering artifacts if you don't set this property
-    System.setProperty(&quot;sun.awt.noerasebackground&quot;,&quot;true&quot;);</p>
-
-    // instantiate the SWT composite for the drawing
-    // we can't use the default Composite because using the AWT bridge
-    // requires that it have the property of SWT.EMBEDDED
-    Composite composite = new Composite(parent, SWT.EMBEDDED);
-  
-    // set the layout so our canvas fills the whole control
-    composite.setLayout(new FillLayout());
-
-    // create the special frame bridge to AWT
-    java.awt.Frame awtFrame = SWT_AWT.new_Frame(composite);
-
-    // build VTK Pipeline
-    vtkConeSource cone = new vtkConeSource();
-    cone.SetResolution(20);
-    cone.SetHeight(0.3);
-    cone.SetRadius(0.1);
-    vtkPolyDataMapper coneMapper = new vtkPolyDataMapper();
-    coneMapper.SetInputConnection(cone.GetOutputPort());
-    vtkActor coneActor = new vtkActor();
-    coneActor.SetMapper(coneMapper);
-
-    // VTK rendering part
-    vtkAwtComponent awtWidget = new vtkAwtComponent();
-    awtWidget.getRenderer().AddActor(coneActor);
-
-    // finally, add our vtk widget as a child of the frame
-    awtFrame.add(awtWidget.getComponent());
-  }</pre>
-<p>The first line isn't always needed but some systems exhibit weird artifacts (partial erasure or blinking) if you don't. YMMV.</p>
-<p>Then the SWT composite is instantiated. SWT is Eclipse's Standard Widget Toolkit, a very thin platform-specific widget set that mimics as closely as possible the actual platform widgets. Composite is the fundamental drawing surface for all SWT widgets. We then set the simplest layout, which tells SWT to use up all the drawing surface.</p>
-<p>Then the crux of this method the special AWT to SWT bridge. This <a href="http://help.eclipse.org/kepler/index.jsp?topic=%2Forg.eclipse.platform.doc.isv%2Freference%2Fapi%2Forg%2Feclipse%2Fswt%2Fawt%2FSWT_AWT.html" title="Class definition of the SWT_AWT bridge">class</a> allows one to embed AWT widgets inside a SWT widget (and vice versa, but we don't care about the other way). We pass in our SWT composite and the result is we get back a valid AWT Frameinto which we can embed our AWT-based VTK widget.</p>
-<p>The next part is standard VTK, we create the pipeline which is all embedded in a awtVtkComponent.</p>
-<p>Finally, we get the AWT widget's component (essentially the drawing surface) and we add it to the AWT frame we created. And that's it. Let's see what it looks like.</p>
-<p>Go to Run/Run Configurations....  That brings up a Launch configuration dialog:</p>
-<p><img src="images/LaunchConfig.png" width="700" height="507" alt="Launch congifiguration dialog" /></p>
-<p>You can leave everything as-is, but you probably want to change the Name to something usefule like &quot;workbench&quot; (which is, in fact, what is being launched). Then select the program arguments tab and add the path to the location of the VTK native libraries (see previous <a href="vtkview.html#program_arg" title="program args in previous chapter">chapter</a>).</p>
-<p>The select &quot;Run&quot; (which will automatically save the launch config) and you'll get another instance of Eclipse launched. The first time you do this you'll see the Eclipse welcome screen. Just select the &quot;Go to Workbench&quot; button and you'll be presented with the Eclipse workbench. Select Window/Show View/Other... then find the VTK Views category, open the twisty and there is VTK View. Double-click and your view, complete with Cone will appear in the lower right. Why in the lower right? Because that's what the XML in the plugin XML told it to do. In a later chapter will set up an Eclipse perspective and do it right, but this is fiine for now. To see the cone is all it's glory, double-click on the tab where it says VTK View and the view will fill the whole workbench. (Note this a handy feature which applies to every view. Double click on the tab again to restore the previous size and position.)</p>
-<p><img src="images/vtkview_0.jpg" width="600" height="450" alt="Cone in a VTK View" /></p>
-<p>Note that the widget is alive and well, try rotating the cone to verify.</p>
-<p>And that's it. Now, while this is very useful, it's just the beginning.  One of the areas we want to look at is trying out the various examples and demos. If we have to create a new View for every one AND create a new launch config, etc. it will get very tedious. Instead, let's explore using the OSGI bundle feature of Eclipse and Java's ability to dynamically instantiate classes at runtime to make this a LOT easier.</p>
-<p><a href="#" title="A VTK Scene Inside Eclipse">Next Chapter: Creating a VTK Scene in Eclipse</a></p>
+<p><strong>Creating a  View with a Series of &quot;Scenes&quot;</strong></p>
+<p>&nbsp;</p>
+<p><a href="#" title="A VTK Scene Inside Eclipse">Next Chapter: Testing out some of the VTK Examples</a></p>
 <p>&nbsp;</p>
 <div> </div>
 </div>
