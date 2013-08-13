@@ -25,7 +25,7 @@
 <h1>vtkscene</h1>
 <h2>Creating a  View with a Series of &quot;Scenes&quot;</h2>
 <p><em>Note: The source code for this article is on github: <a href="https://github.com/rkwright/vtkscene.git" title="github repository for vtkscene">https://github.com/rkwright/vtkscene.git</a></em></p>
-<p>In the previoous article in this series, we created a simple Eclipse view that wrapped a vtkPanel and allowed us to run a VTK rendering demo. However, if we want to create a series of these, the process wil get cumbersome and tedious. So it makes sense to leverage the OSGI bundle support in Eclipse and Java's ability to dynamically create instances of a class to make our life easier.</p>
+<p>In the previous article in this series, we created a simple Eclipse view that wrapped a vtkPanel and allowed us to run a VTK rendering demo. However, if we want to create a series of these, the process wil get cumbersome and tedious. So it makes sense to leverage the OSGI bundle support in Eclipse and Java's ability to dynamically create instances of a class to make our life easier.</p>
 <p>The design for this is to create an Eclipse view that can dynamically instantiate a particular demo snippet and display it. Each of these demo-views are referred to as &quot;scenes&quot;. The view has an associated dialog (with menu and toolbar UI to select it) from which the user can choose a demo (or scene) which is then displayed in the view.</p>
 <p>There are a number of steps to this:</p>
 <ul>
@@ -35,6 +35,7 @@
   <li>Implement the code to create the demo-view dynamically from the name of the class</li>
   <li>Create the code to display a dialog for the user to choose from the list of demos</li>
   </ul>
+<p>Of course, you need to create a new project and include the org.vtk.runtime plugin (in the repo). For details on this, please see the<a href="vtkview.html" title="vtkview article">vtkview article</a>.</p>
 <h3>Refactor the View Code</h3>
 <p>First step is to split the simple view from the previous article into a view, SceneView and vtk-based rendering component. This is pretty simple. The code for the VTKComposite rendering component is</p>
 <pre>public class VTKComposite extends Composite
@@ -157,6 +158,7 @@ public class SceneView extends ViewPart
     {
     }
 }</pre>
+<p>&nbsp;</p>
 <p>There are two constructors. The &quot;real&quot; one squirrels away the composite (mainly for the dispose event) and the trivial constructor which is used by the enumeration routine (covered later).</p>
 <p>Do note that getLabel and getDescription MUST be overriden and provide a reasonable label (e.g. &quot;Marching Cube&quot;) and &quot;An implementation of the marching-cube algorithm&quot;).</p>
 <p>There are several methods that normally are ignored but may occasionally be used. dispose() is always called but exists only if implementors need to do something when the &quot;scene&quot; is destroyed (which we will at the end of the article). Similarly, render() is not normally used for anything, but may occasionally be needed to be overridden.</p>
@@ -186,11 +188,11 @@ public class SceneView extends ViewPart
  
      return newScene;
 }</pre>
- <p>This is fairly &quot;straightforward&quot; (another joke - this took me a fair amountof time to figure out and get to work properly). Note that there are two paths through this. One actually consructs a working instance of the class that is used. The other is only used to instantiate the class for the enumClasses method detailed below.</p>
+ <p>This is fairly &quot;straightforward&quot; (another joke - this took me a fair amount of time to figure out and get to work properly). Note that there are two paths through this. One actually consructs a working instance of the class that is used. The other is only used to instantiate the class for the enumClasses method detailed below.</p>
 <h3>Enumerate the 
 
 Available Demos Dynamically</h3>
-<p>Once we are able to build the classes dynamically we are getting there. The other useful trick is to be able to dynamically figure out what demos we want to show. The approach is simple. Any &quot;scenes&quot; you wish to add to the list of available scenes needs to be subclassed from VTKScene AND  needs to be in a package that has only scene-based classes. You can have as many of these packages as you like. Each package that contains scenes needs to be added to the list of example packages:</p>
+<p>Once we are able to build the classes dynamically we are almost there. The other useful trick is to be able to dynamically figure out what demos we want to show. The approach is simple. Any &quot;scenes&quot; you wish to add to the list of available scenes needs to be subclassed from VTKScene AND  needs to be in a package that has only scene-based classes. You can have as many of these packages as you like. Each package that contains scenes needs to be added to the list of example packages:</p>
 <pre>/**
  * property name for the examples package
  */
