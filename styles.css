@@ -87,3 +87,13 @@ pre
 	border-color: rgb(204,204,204);
 	font-size:80%;
 	}
+.codeword {
+	font-family: "Lucida Console", Monaco, monospace;
+	font-size: 100%;
+}
+	
+img
+{
+    border: 1px solid;
+	border-color: rgb(204,204,204);
+}

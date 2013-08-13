@@ -22,9 +22,418 @@
 </div>
 
 <div id="normal_div">
-<h2>vtkview</h2>
-<p><strong>Creating a  View with a Series of &quot;Scenes&quot;</strong></p>
-<p>&nbsp;</p>
+<h1>vtkscene</h1>
+<h2>Creating a  View with a Series of &quot;Scenes&quot;</h2>
+<p><em>Note: The source code for this article is on github: <a href="https://github.com/rkwright/vtkscene.git" title="github repository for vtkscene">https://github.com/rkwright/vtkscene.git</a></em></p>
+<p>In the previoous article in this series, we created a simple Eclipse view that wrapped a vtkPanel and allowed us to run a VTK rendering demo. However, if we want to create a series of these, the process wil get cumbersome and tedious. So it makes sense to leverage the OSGI bundle support in Eclipse and Java's ability to dynamically create instances of a class to make our life easier.</p>
+<p>The design for this is to create an Eclipse view that can dynamically instantiate a particular demo snippet and display it. Each of these demo-views are referred to as &quot;scenes&quot;. The view has an associated dialog (with menu and toolbar UI to select it) from which the user can choose a demo (or scene) which is then displayed in the view.</p>
+<p>There are a number of steps to this:</p>
+<ul>
+  <li>Refactor the vtkPanel-wrapping code into one class for the vtkPanel and another for the view itself</li>
+  <li>Create a base class for the series of &quot;scenes&quot;</li>
+  <li>Implement the code to enumerate the demos</li>
+  <li>Implement the code to create the demo-view dynamically from the name of the class</li>
+  <li>Create the code to display a dialog for the user to choose from the list of demos</li>
+  </ul>
+<h3>Refactor the View Code</h3>
+<p>First step is to split the simple view from the previous article into a view, SceneView and vtk-based rendering component. This is pretty simple. The code for the VTKComposite rendering component is</p>
+<pre>public class VTKComposite extends Composite
+{
+    private java.awt.Frame 	awtFrame;
+    private vtkPanel 			panel;
+
+    public VTKComposite(Composite parent)    
+    {
+        super(parent, SWT.EMBEDDED |SWT.NO_BACKGROUND);
+        // this is perhaps not always necessary, but some implementations have 
+        // weird artifacts (blinking, incomplete erasure) if this is not set
+        System.setProperty(&quot;sun.awt.noerasebackground&quot;,&quot;true&quot;);
+  
+        // this tells the SWT composite to simply use the entire layout surface
+        this.setLayout( new FillLayout() ); 
+  
+        // create the bridge between Swing and SWT
+        awtFrame = SWT_AWT.new_Frame(this); 
+
+        // create the VTK rendering surface
+        panel = new vtkPanel();
+
+        // and add it as a child of the frame
+        awtFrame.add(panel);
+    }
+}</pre>
+  
+  
+<p>The view class then becomes:</p>
+<pre>
+public class SceneView extends ViewPart
+{
+    /**
+     * The ID of the view as specified by the extension.
+     */
+     public static final String ID = &quot;com.geofx.vtk.scene.VTKScene&quot;;
+
+     private VTKComposite 		vtkComposite;
+     private VTKScene			scene;
+     private String 			sceneName;
+
+     /**
+      * The constructor.
+      */
+      public SceneView()
+      {
+          Activator.setView( this );
+      }
+
+      public void createPartControl( Composite parent )
+      { 
+          sceneName = Activator.getSceneName();
+          vtkComposite = new VTKComposite(parent); 
+   
+          this.scene = Activator.constructScene(sceneName, vtkComposite);
+      
+          // we need to explicitly request the focus or we never get it
+          vtkComposite.getFrame().requestFocus(); 
+      }
+
+      public void dispose()
+      {
+          this.scene.dispose();
+      }
+   
+      /**
+       * A public method to update the view. 
+       */
+      public void updateView()
+      {
+          if (!sceneName.equals(Activator.getSceneName()))
+          {
+              sceneName = Activator.getSceneName();
+   
+              this.scene.dispose();
+   
+              this.scene = Activator.constructScene(sceneName, vtkComposite);
+          }  
+          this.scene.render();
+       }
+}</pre>
+   
+  <p> The constructor just tells the plugin's Activator object (the singleton that controls the plugin's lifetime) which scene is current active, i.e. the one about to be created. In createPartControl, we get the current scene name (class) from the activator, which always holds the name of the current (or about to be) scene. Then we just instantiate this scene's rendering component. Then we pass the name of the scene and the new control to a function which dynamically creates the new scene. We will cover that a little later.</p>
+  <p>The dispose method does little in this context, but allows Eclipse or others to dispose of resources, if needed.</p>
+  <p>UpdateView is called when the scene is being changed. The old scene is first disposed then the constructScene method is called to construct the new scene. Finally the view is told to re-render itself.</p>
+  <p>That's all there is to it! Though I'll comment that it took a <strong>LOT</strong> of spelunkng through Eclipse and experimenting to determine that this is how to do this... :-) - which is one of the reasons I decided to write this series of articles.</p>
+
+<h3>Create the Base Class for the Scenes</h3>
+<p>Again, the base class for the &quot;scenes&quot; is very simple. It consists of</p>
+<pre>public abstract class VTKScene 
+{
+    protected VTKComposite 		vtkComposite;
+ 
+    /**
+     * Creates a new scene owned by the specified parent component.
+     * 
+     * @param parent   The Composite which holds the actual GLCanvas
+     */
+   
+    public VTKScene( VTKComposite composite )
+    {
+        vtkComposite = composite;    
+    }
+ 
+    // a default constructor used by the ClassInfo enumerator
+    public VTKScene()
+    { 
+    }
+ 
+    public abstract String getLabel();  
+    public abstract String getDescription();
+
+    // normally nothing to do here, but can be overridden to dispose of resources properly
+    public void dispose()
+    {
+    }
+
+    public void render()
+    {
+    }
+}</pre>
+<p>There are two constructors. The &quot;real&quot; one squirrels away the composite (mainly for the dispose event) and the trivial constructor which is used by the enumeration routine (covered later).</p>
+<p>Do note that getLabel and getDescription MUST be overriden and provide a reasonable label (e.g. &quot;Marching Cube&quot;) and &quot;An implementation of the marching-cube algorithm&quot;).</p>
+<p>There are several methods that normally are ignored but may occasionally be used. dispose() is always called but exists only if implementors need to do something when the &quot;scene&quot; is destroyed (which we will at the end of the article). Similarly, render() is not normally used for anything, but may occasionally be needed to be overridden.</p>
+<h3>Constructing a Scene Dynamically</h3>
+<p>One of the key aspects of this project is this abilty to construct scenes dynamically.</p>
+<pre>public static VTKScene constructScene(String name, VTKComposite composite)
+{
+     VTKScene newScene = null;
+     Object[] args = {};
+     Class[] types = {};
+     Class&lt;VTKScene&gt; classe;
+
+     try
+     {
+         classe = (Class&lt;VTKScene&gt;) Class.forName(name);
+         if (composite != null) 
+         {
+             args = new Object[1];
+             args[0] = composite;
+             types = new Class[1];
+             types[0] = VTKComposite.class;
+             newScene = (VTKScene) classe.getConstructor(types).newInstance(args);
+         }
+         else
+             newScene = (VTKScene) classe.getConstructor(types).newInstance();
+     }
+ 
+     return newScene;
+}</pre>
+ <p>This is fairly &quot;straightforward&quot; (another joke - this took me a fair amountof time to figure out and get to work properly). Note that there are two paths through this. One actually consructs a working instance of the class that is used. The other is only used to instantiate the class for the enumClasses method detailed below.</p>
+<h3>Enumerate the 
+
+Available Demos Dynamically</h3>
+<p>Once we are able to build the classes dynamically we are getting there. The other useful trick is to be able to dynamically figure out what demos we want to show. The approach is simple. Any &quot;scenes&quot; you wish to add to the list of available scenes needs to be subclassed from VTKScene AND  needs to be in a package that has only scene-based classes. You can have as many of these packages as you like. Each package that contains scenes needs to be added to the list of example packages:</p>
+<pre>/**
+ * property name for the examples package
+ */
+ public static final String			VTK_SAMPLES_PACKAGE    		= &quot;com.geofx.vtk.samples&quot;;
+/**
+ * All the examples packages
+ */
+public static final String[] EXAMPLE_PACKAGES = { VTK_SAMPLES_PACKAGE };</pre>
+<p>When the plugin is first instantiated, the enumClasses() method is called from the plugin's start() method:</p>
+
+
+<pre>/**
+ * Just a simple holder for our ClassInfo
+ */
+public class ClassInfo
+{
+    public String name;
+    public String description;
+    public String label;
+
+    public ClassInfo(String n, String d, String l)
+    {
+        name = n;
+        description = d;
+        label = l;
+    }
+}
+
+public static ArrayList&lt;ClassInfo&gt; getClassInfo()
+{
+    return classInfo;
+}
+
+/**
+ * Using the bundle, enumerate all the classes in this plugin and see which ones are in the
+ * examples package. Those are the ones we will allow the user to choose.
+ * 
+ * @return list of classes to choose from
+ */
+public void enumClasses()
+{
+    try
+    {
+        Enumeration&lt;?&gt; entries = Platform.getBundle(PluginConstants.PLUGIN_ID).findEntries(&quot;/&quot;, &quot;*&quot; + &quot;.class&quot;, true);
+        while (entries.hasMoreElements())
+        {
+            URL entry = (URL) entries.nextElement();
+            // Change the URLs to have Java class names
+            String path = entry.getPath().replace('/', '.');
+            // see if the class is in the package we are interested in and isn't a subclass
+            int start = -1;
+            for (String pkgName : PluginConstants.EXAMPLE_PACKAGES)
+            {
+                start = path.indexOf(pkgName);
+                if (start &gt;= 0)
+                    break;
+            }
+
+            int subClass = path.indexOf(&quot;$&quot;);
+            if (start &gt;= 0 &amp;&amp; subClass == -1)
+            {
+                // strip off the class suffix and we are done
+                String name = path.substring(start, path.length() - &quot;.class&quot;.length());
+                VTKScene scene = constructScene(name, null);
+                classInfo.add(getClassInfo(name, scene));
+            }
+        }
+    }
+    catch (Exception e)
+    {
+        e.printStackTrace();
+    }
+}
+
+/** 
+ * @param name
+ * @param scene
+ * @return
+ */
+private ClassInfo getClassInfo(String name, VTKScene scene)
+{
+   ClassInfo info = new ClassInfo(name, scene.getDescription(), scene.getLabel());
+   return info;
+}</pre>
+   
+<p>This is straightforward, we just ask the IDE (via the Platform object) to enumerate all the classes in our plugin. We walk through the list and discard any subclasses. The others we store in the list of available scene-classes.</p>
+<p>Note that this enumeration method can be used to search for any files - it doesn't use the class-loader or have any Java-related restricitions, it's strictly a file search within the specfied bundle.</p>
+<h3>Create the Dialog for the User to Select a Scene</h3>
+<p>The final step is to create (and invoke) the dialog that allows the user to view the scenes. Eclipse uses the &quot;commands&quot; approach to invoke UI like this dialog. The commands consist of (in this case) three parts:</p>
+<ul>
+  <li>The declarative command which tells Eclipse what class to call to handle the menu or toolbar request</li>
+  <li>The menu declaration, which tells Eclipse where to put your menu and what it contains</li>
+  <li>The toolbar declaration, which tells Eclipse where to put your toolbar and what it contains</li>
+  </ul>
+<p>These can be created in either of two ways, by directly editing the plugin.xml file or by using the UI of the PDE (plugin Development Environment). We'll walk through it via the PDE here then look at the plugin.xml. Note that the whole process of using Eclipse commands is covered in some depth in an <a href="http://www.vogella.com/articles/EclipseCommands/article.html" title="Eclipse tutorial on commands">excellent tutorial</a> by Lars Vogel.</p>
+<p>First off, create the shell of the handler which we will need momentarily. Select New/Class... Give the class a reasonable name, like SelectHandler and choose the base class as AbstractHandler. This will creat a shell of the class. We'll flesh it out later.</p>
+<p>Double-click on plugin.xml to open the PDE, then go to the Extensions tab. Select &quot;Add...&quot; and enter org.eclipse.ui.commands which will cause Eclipse to filter out the other possible extension points. Select that choice. Back in the PDE, right-click on the entry in the dialog and select New/Command. This will give you this view:</p>
+<p><img src="images/Commands.png" width="827" height="262" alt="Commands view in the PDE" /></p>
+<p>Enter the ID of the command, which will be used in the menu and toolbar portions to identify which command to invoke, so ensure it is unique. The name is unimportant, but give it a reasonable name. For the default handler, browse (by typing in the first part of the class we created above) and select it. That's it. The command is done.</p>
+<p>First create the menu. Again, in the extensions tab, select Add to add a new extension and set the filter to org.eclipse.ui.menus, select it. In the PDE, right-click the org.eclipse.ui.menua and choose New/Menu Contribution. In the LocationURI enter &quot;menu:org.eclipse.ui.main.menu&quot;. Be sure to spell it correctly or your menu won't be shown. This entry tells Eclipse we want to create a new top-level menu and to put our menu in the main menu.</p>
+<p><img src="images/MenuContribution.png" width="831" height="280" alt="Menu Contribution" /></p>
+<p>Now right-click the menu-contribution line and select New/Menu. This will result in this screen which allows you to specify the parameters of the top-level menu. All that really matters is the label. We don't use the ID so you can skip it if you like.</p>
+<p><img src="images/TopLevelMenu.png" width="832" height="281" alt="Top level menu parameters" /></p>
+<p>The final step is to create the command for the menu. This is essentially the menu-item but it is called a &quot;command&quot; which is a little confusing. So right click on the VTK Select (menu) line and choose New/Command:</p>
+<p><img src="images/MenuCommand.png" width="826" height="341" alt="Menu command entry" /></p>
+<p>The key element is to specify the same commandid you entered in the command section above (e.g. com.geofx.vtk.scene.select). If you don't use the correct ID the command won't be invoked.</p>
+<p>The toolbar is very similar, but there are a couple of odd twists.The first step is to create a menu-contribution, just like for a menu. The only difference is the <span class="codeword">LocationURI</span>, which is toolbar:org.eclipse.ui.main.toolbar, which tells Eclipse we are contributing a toolbar to the main toolbar.</p>
+<p><img src="images/ToolbarContribution.png" width="833" height="254" alt="Toolbar contribution" /></p>
+<p>Then right-click on the toolbar contribution line and choose New/Toolbar:</p>
+<p><img src="images/Toolbar.png" width="829" height="264" alt="Set the toolbar parameters" /></p>
+<p>Finally, right-click on the Toolbar entry and choose New/Command. Again, this is a little misleading as what is being created is actually the toolbar button. Use the same commandid, as above.</p>
+<p><img src="images/ToolbarCommand.png" width="828" height="337" alt="Toolbar button command entry" /></p>
+<p>The resulting markup in the plugin.xml looks like this:</p>
+<pre>&lt;extension point=&quot;org.eclipse.ui.commands&quot;&gt;
+    &lt;command
+        defaultHandler=&quot;com.geofx.vtk.scene.SelectHandler&quot;
+        id=&quot;com.geofx.vtk.commands.select&quot;
+        name=&quot;Select&quot;&gt;
+    &lt;/command&gt;
+&lt;/extension&gt;
+
+&lt;extension point=&quot;org.eclipse.ui.menus&quot;&gt;
+    &lt;menuContribution
+        allPopups=&quot;false&quot;
+        locationURI=&quot;menu:org.eclipse.ui.main.menu&quot;&gt;
+        &lt;menu
+            id=&quot;selectMenu&quot;
+            label=&quot;VTK Select&quot;&gt;
+            &lt;command
+                commandId=&quot;com.geofx.vtk.commands.select&quot;
+                icon=&quot;icons/vtk-logo_16.png&quot;
+                label=&quot;Select...&quot;
+                tooltip=&quot;Show dialog to select demo&quot;&gt;
+            &lt;/command&gt;
+        &lt;/menu&gt;
+    &lt;/menuContribution&gt;
+    &lt;menuContribution
+        allPopups=&quot;false&quot;
+        locationURI=&quot;toolbar:org.eclipse.ui.main.toolbar&quot;&gt;
+        &lt;toolbar
+            id=&quot;com.geofx.vtk.toolbar&quot;
+            label=&quot;VTK Toolbar&quot;&gt;
+            &lt;command
+                commandId=&quot;com.geofx.vtk.commands.select&quot;
+                icon=&quot;icons/vtk-logo_16.png&quot;
+                style=&quot;push&quot;
+                tooltip=&quot;Open dialog to select demo&quot;&gt;
+            &lt;/comman&lt;/toolbar&gt;
+    &lt;/menuContribution&gt;
+&lt;/extension&gt;</pre>
+<p>That completes the UI. All that's left is to implement the handler we created to invoke our dialog. It's actually fairly simple (once you figure it out... :-)</p>
+<pre>public class SelectHandler extends AbstractHandler
+{
+    public Object execute(ExecutionEvent event) throws ExecutionException
+    {
+        ArrayList&lt;?&gt; classList = Activator.getClassInfo(); 
+   
+        ListDialog dialog = new ListDialog(PlatformUI.getWorkbench().getActiveWorkbenchWindow().getShell());
+        dialog.setTitle(&quot;Select Scene&quot;);
+        dialog.setMessage(&quot;Choose a scene from the list...&quot;);
+        dialog.setContentProvider(new ListContentProvider(classList));
+   
+        dialog.setLabelProvider( new ListLabelProvider() );
+   
+        dialog.setInput(classList);
+        dialog.setInitialSelections(new Object[] {Activator.getSceneName()});
+        if ( dialog.open() == Window.OK)
+        {
+            Object[] results = dialog.getResult();
+            if (results.length &gt; 0 &amp;&amp; results[0] instanceof ClassInfo)
+            {
+                ClassInfo info = (ClassInfo)results[0];
+                Activator.setSceneName( info.name );
+                Activator.getView().updateView();
+            }
+         }
+   
+         return null;
+    }
+
+    /**
+     * 	 the generic implementation is sufficient
+     */
+    private class ListContentProvider implements IStructuredContentProvider
+    {
+        private ArrayList&lt;ClassInfo&gt; mList = null;
+   
+        @SuppressWarnings(&quot;unchecked&quot;)
+        public ListContentProvider ( ArrayList&lt;?&gt; classList )
+        {
+            mList = (ArrayList&lt;ClassInfo&gt;) classList;
+        }
+   
+        public Object[] getElements(Object inputElement) 
+        {
+            return mList.toArray();
+        } 
+ 
+        public void dispose()
+        {
+        }
+ 
+        public void inputChanged(Viewer viewer, Object oldInput, Object newInput)
+        {
+        }
+   }
+   
+   /**
+    * We just need to fetch the label from the ClassInfo object we get passed
+    *
+    */
+   protected class ListLabelProvider extends LabelProvider 
+   {
+       public String getText(Object obj) 
+       {
+           ClassInfo	info = (ClassInfo)obj;
+           return info.label;
+       }
+   }
+}</pre>
+   
+<p>We fetch the list  of classes that we enumerated when the plugin was first invoked.  Then we create the actual dialog. Note that we need a window handle - which we don't have. So we just ask the IDE to give us the current display handle.</p>
+<p>We tell Eclipse that it should get the content for the dialog from the list we fetched from the Activator. Of course, the dialog hasn't a clue how to read a ClassInfo list since it doesn't know what a ClassInfo object is. Moreover, Eclipse doesn't even know how to use our Array list, so we set up a IStructuredContentProvider that converts the list into a form thaat Eclipse can handle. For the ClassInfo we delegate the work to the LabelProvider. For each label the dialog needs it calls theListContentProvider, which LabelProvider with the entry from the list and we convert the list item into a form (string) that the dialog knows how to handle.</p>
+<p>And we're done, right? Well, not quite. What if we invoke the dialog but the user hasn't even opened the SceneView? Eclipse isn't clever enough to automatically open the view so we need to check if the view is open and create the view if it isn't already.</p>
+<p>So we add this snippet into the SelectHandler before the call to Activator.setView:</p>
+<pre> if (Activator.getView() == null)
+    Activator.createView(event);</pre>
+<p>And in the Activator class, we add:</p>
+<pre>public static void createView(ExecutionEvent event)
+{
+    try
+    {
+        HandlerUtil.getActiveWorkbenchWindow(event).getActivePage().showView(PluginConstants.VIEW_ID);
+    }
+    catch (PartInitException e)
+    {
+        e.printStackTrace();
+    }
+}</pre>
+<p>And the very last piece is to add this code to SceneView.dispose:</p>
+<pre>Activator.setView(null);</pre>
+<p>So the Activator knows that the view got destroyed and doesn't tell Eclipse to use the now nonexistent view.</p>
+<p>And that's it. The code in github for this article only has a couple of trivial 3D cones. We'll add some more variety in the next article.</p>
 <p><a href="#" title="A VTK Scene Inside Eclipse">Next Chapter: Testing out some of the VTK Examples</a></p>
 <p>&nbsp;</p>
 <div> </div>
