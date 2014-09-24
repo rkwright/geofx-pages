@@ -1,0 +1,35 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<title>Untitled Document</title>
+<style type="text/css">
+<!--
+body {
+	font-family: Verdana;
+}
+-->
+</style>
+</head>
+
+<body>
+<p>GMS Flow Steps</p>
+<p>&nbsp;</p>
+<ol>
+  <li>GMS flow-engine scans project file and creates the objects which are the modules</li>
+  <li>Flow-engine also creates the event-handlers for updates and connects the appropriate modules</li>
+  <li>Processor module is initialized with intial values for all parameters (incuding depth and time)</li>
+  <li>Source module reads data from depths.gza file and creates the depths dataset</li>
+  <li>Source module sends event to the processor module that it has been modified.</li>
+  <li>Depth animation element is initialized to zero</li>
+  <li>Processor calculates current temp from current parameters. </li>
+  <li>Stores result in the result vector</li>
+  <li>All depths processed? If not, fetch next depth, update parameters, return to step 7.</li>
+  <li>All depths processed, so module notifies aggregator (rolling result) that temp vector has been updated</li>
+  <li>Aggregator module fetches current temp vector from dataset, stores into the rolling-result dataset</li>
+  <li>Aggregator notifies viewer module that rolling-result dataset has been updated</li>
+  <li>Viewer module updates view from rolling-result dataset</li>
+  <li>Time animation element increments time, updates parameters, return to step 6</li>
+</ol>
+</body>
+</html>

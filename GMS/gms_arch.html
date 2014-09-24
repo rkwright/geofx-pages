@@ -1,0 +1,121 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>GMS</title>
+<link href="../styles.css" rel="stylesheet" type="text/css" />
+</head>
+
+<body>
+<div id="banner" >
+<img src="../images/GeoFX-Pages.png" width="1000" height="100" alt="Geo-F/X banner" />
+</div>
+
+<div style="left: 0px; position: absolute; width:100%; overflow:hidden; height:35px">
+<ul id="nav">
+	<li><a href="index.html">Home</a></li>
+	<li><a href="epubcrude.html">epubcrude</a></li>
+	<li><a href="GMS.html">GMS</a></li>
+	<li><a href="vtkview.html">vtkview</a></li>
+	<li><a href="http://www.geofx.com">geofx.com</a></li>
+</ul>
+</div>
+
+
+<div id="normal_div">
+  <h2 >GMS Architecture</h2>
+<p >The following sections outline all the major components of the GMS design and implementation.</p>
+<h3 >The Model</h3>
+<p >THe model for GMS is the project, which is effectively the description of the pipeline. This is serialized externally as XML and internally as objects of the Module class (and its children). When GMS is started it loads the current project (if any), parses out the information and constructs the pipeline, including the animation info (if any).</p>
+<h4 >ProjectInfo</h4>
+<p >The parsing of the project is performed by the ProjectInfo object. The actual parsing is done via a Sax parser, which handles all the begin and end object calls, parsing out:</p>
+<ul>
+  <li>The attributes of the Module object itself, including objectName, tab name and other view parameters (if any)</li>
+  <li>The inputs and outputs</li>
+  <li>The FieldValues</li>
+  </ul>
+<p>As each Module element is completely parsed a new Module object is instantiated using the objectName passed in and the inputs, outputs and FieldValues are passed to the new object to set its values.  This process is repeated for all the modules. </p>
+<p>When the end of the project info is reached (i.e. the closing tag of the Sequence element) the controller is instantiated and its parameters (e.g. animation attributes) are set in the new instance.</p>
+<h4 >Manifest </h4>
+<p >One of the elements of the project info is the manifest element, which holds the information about resources to be loaded, if any.</p>
+<h4 >Field Values</h4>
+<p >Modules can have parameters that need to be set. This is done by specifying the values in the &lt;init&gt; element, e.g.</p>
+<pre>&lt;init&gt;
+    &lt;set field=&quot;diffusivity&quot; type=&quot;Double&quot; value=&quot;1e-04&quot;/&gt;
+    &lt;set field=&quot;dailyAmplitude&quot; type=&quot;Double&quot; value=&quot;10.0&quot;/&gt;
+&lt;/init&gt;</pre>
+<p >Each field must correspond to a <strong>public</strong> member in the  object subclassed from Module. The member must be public as GMS finds and sets the value using Java reflection, which works only on public members. The type can be any of the standard Java types, e.g Boolean, Byte, Char, Short, Int, Long, Float, Double, String, or Object. Note that these names must be spelled as shown (since the lower-case names cannot be used in an enum). </p>
+<p class="note" >Note  that fields as objects are not yet supported.</p>
+<p >Field values can be arrays as well, e.g.</p>
+<pre >&lt;init&gt;
+    &lt;set field=&quot;symbolColors&quot; type=&quot;Int&quot;&gt;
+        &lt;item value=&quot;#FFFFFF&quot;/&gt;
+        &lt;item value=&quot;#FF00FF&quot;/&gt;
+        &lt;item value=&quot;#00FF00&quot;/&gt;
+    &lt;/set&gt;
+&lt;/init&gt;</pre>
+<p >
+</p>
+<h4 >Inputs and Outputs</h4>
+<p >Inputs and outputs are fairly straightforward:</p>
+<pre >&lt;inputs&gt;
+    &lt;input field=&quot;depths&quot; type=&quot;Grid&quot; href=&quot;foo.depths&quot;/&gt;
+&lt;/inputs&gt;
+&lt;outputs&gt;
+    &lt;output field=&quot;tempwaveData&quot; type=&quot;com.geofx.gms.science.TempwaveData&quot; id=&quot;foo.profile&quot;/&gt;
+&lt;/outputs&gt;</pre>
+<p >The input loads an dataset of type Grid with the ID of &quot;
+  foo.depths&quot; (which was loaded by the previous module) and stores it in the field <span class="codeword">depths</span>. Note that all IDs must be unique within the project. </p>
+<p >The output is similar; the output is stored in an object named <span class="codeword">TempwaveData</span> with the ID of &quot;foo.profile&quot;.<br />
+</p>
+<h3 >Modules</h3>
+<p >Modules (com.geofx.gms.module.Module) are the basic building block for the pipeline which comprises a GMS project. There are two basic types:</p>
+<ul>
+  <li><em>Processor</em> modules which load or transform data in some fashion.</li>
+  <li><em>View</em> modules which draw information in a window and do not have any other output</li>
+</ul>
+<p>The module class is a relatively simple abstract class, which contains the pointers to the inputs (if any), the outputs (if any) and any field variables that hold initialization values for the module.</p>
+<p>The module also has the name of the class derived from the module, a clock which contains the last time the module was updated and a matrix which can be used to transform coordinates, if needed.</p>
+<p>The module also has a pointer to the view-class the performs the drawing if the module is going to draw anything.</p>
+<h3 >Datasets</h3>
+<p >The dataset is the funamental data structure of GMS. There are (or will be eventually) 6 forms:</p>
+<ul>
+  <li>Scalar</li>
+  <li>Grid</li>
+  <li>TIN</li>
+  <li>GML</li>
+  <li>RollingGrid</li>
+  <li>User-defined</li>
+  </ul>
+<p class="note">Currently, only Scalar, Grid and RollingGrid are supported</p>
+<h4 >Scalar</h4>
+<h4 >RollingGrid</h4>
+<h3 >Controller</h3>
+<h3 >Animation</h3>
+<h4 >Clocks</h4>
+<h4 >Start/Stop/Pause</h4>
+<h3 >OpenGL Rendering</h3>
+<h4 >JOGL</h4>
+<h4 >Integration with Eclipse and SWT</h4>
+<h4 >GL Grip</h4>
+<h4 >GL PostScript Support</h4>
+<h4 >Mapping Support</h4>
+<h3 >Views</h3>
+<h4 >General</h4>
+<h4 >Frames and Axes</h4>
+<h4 >Line Graph</h4>
+<h4 >Polyline Graph</h4>
+<h3 >GMS Editor</h3>
+<h4 >Multipage Editor</h4>
+<h4 >XMLEditor</h4>
+<h3 >GMS Plugin</h3>
+<h4 >The Activator</h4>
+<h4 >Constants</h4>
+<h3 >Wizards</h3>
+<p >&nbsp;</p>
+<h3 >TempWave Module</h3>
+<h4 >General</h4>
+<h4 >TempWaveData and Iter</h4>
+</div>
+</body>
+</html>

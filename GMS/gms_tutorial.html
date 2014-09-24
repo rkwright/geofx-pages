@@ -1,0 +1,81 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>GMS</title>
+<link href="../styles.css" rel="stylesheet" type="text/css" />
+</head>
+
+<body>
+<div id="banner" >
+<img src="../images/GeoFX-Pages.png" width="1000" height="100" alt="Geo-F/X banner" />
+</div>
+
+<div style="left: 0px; position: absolute; width:100%; overflow:hidden; height:35px">
+<ul id="nav">
+	<li><a href="index.html">Home</a></li>
+	<li><a href="epubcrude.html">epubcrude</a></li>
+	<li><a href="GMS.html">GMS</a></li>
+	<li><a href="vtkview.html">vtkview</a></li>
+	<li><a href="http://www.geofx.com">geofx.com</a></li>
+</ul>
+</div>
+
+
+<div id="normal_div">
+<p class="note"><em>Note: This project is a work in progress and at present poorly documented. Bear with me.</em></p>
+<h2>GMS Tutorial</h2>
+<p>The goal of this tutorial is to walk the reader through of the process of creating a GMS project which will model some process and display the results in a view as well as writing the results to a file.</p>
+<p class="note">If you want to follow this with the completed code, the source is available on github...</p>
+<p>The first step is specify the process that is going to be modeled with GMS. In this case, we wish to create a simple two-dimensional erosion model. We model this as two steps:</p>
+<ul>
+  <li>The erosive step in which the amount of erosion is driven by the energy potential in a given cell relative to its neighbours</li>
+  <li>A routing step in which the eroded material is &quot;routed&quot; to its neighbors based on the relative energy potential between them</li>
+</ul>
+<p>We model the outflow as a &quot;leaky bucket&quot; model in which some proportion of the contents of the container &quot;flow&quot; out during each time period t. Formally, this can be written as</p>
+<blockquote>
+  <blockquote>
+    <p class="symbol">q<sub>t</sub> = Q<sub>0</sub> * e <sup>-kt</sup></p>
+    </blockquote>
+  <p>where</p>
+  <blockquote>
+    <p><span class="symbol">q<sub>t</sub></span> = the outflow at time t</p>
+    <p><span class="symbol">Q<sub>0</sub></span>= the outflow at time 0</p>
+    <p><span class="symbol">k</span> = a constant coefficient representing the &quot;leakiness&quot; of the container</p>
+    <p><span class="symbol">t</span> = the time</p>
+  </blockquote>
+  </blockquote>
+<p>At time 0,<span class="symbol"> e <sup>-kt</sup></span> is equal to 1 so <span class="symbol">q<sub>t</sub></span> is equal to  <span class="symbol">Q<sub>0</sub></span>, as expected. But as time passes, t becomes non-zero and the value of e <sup>-kt</sup> becomes smaller and smaller, asymptotically approaching zero. In the real world, the situation is messier as there are smaller scale forces that impact the behaviour of the system over time. But for a simple model this approach works fairly well.</p>
+<p>We model this process by noting that effectively at any time t the rate of loss from the container is some proportion of the amount in the bucket. Hence if we know the contents of the container at any time t and the value of that proportional constant, we can calculate </p>
+<blockquote>
+  <blockquote>
+    <blockquote>
+      <p class="symbol">q<sub>t</sub> = C<sub>t</sub> * p</p>
+    </blockquote>
+    </blockquote>
+  <p>where</p>
+  <blockquote>
+    <p><span class="symbol">C<sub>t</sub></span> = the contents of the container at time <span class="symbol">t</span></p>
+    <p><span class="symbol">p</span> = the proportional constant</p>
+  </blockquote>
+  </blockquote>
+<p>Of course, the rate changes between any two times <span class="symbol">t</span> and <span class="symbol">t+&Delta;t</span> so we need to keep <span class="symbol">&Delta;t</span> as small as possible. Alternatively, we use a non-linear approximation approach such as Runge-Kutta to make the error of estimation as small as possible.</p>
+<p class="note">Our initial approach will only work if there is an even number of cells so we don't have to worry about cells which lose their contents out both sides. We'll solve this more complex case later.</p>
+<p>Routing is relatively simple, we simply   transfer the amount of erosion in any timestep to the adjacent cell with the lower potential. Again, we minimize the estimation error by using R-K approximation.</p>
+<p>We model our two-dimensional world as a series of cells of length <span class="symbol">n</span>. Initially we'll set all containers to be &quot;full&quot;, i.e. having the value of 1.0. Then we run the simulation for<span class="symbol"> n</span> steps. At each step we caluculate the amount of erosion in that time step then rout it.</p>
+<p>At the module level, we then need the following modules in our model:</p>
+<ul>
+  <li>Allocate the cells that form our world and initialize each one to 1.0</li>
+  <li>Perform erosion and routing on the cells</li>
+  <li>Graph the current amounts in each of the set of cells</li>
+  </ul>
+<p>So the modules we need are:</p>
+<ul>
+  <li>CreateDatasetModule</li>
+  <li>ErosionModule</li>
+  <li>LineGraphModule</li>
+  </ul>
+<p>&nbsp;</p>
+</div>
+</body>
+</html>

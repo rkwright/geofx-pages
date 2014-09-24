@@ -1,7 +1,7 @@
 @charset "UTF-8";
 /* CSS Stylers for the geofx-pages */
 body {
-   		/*margin: 0px;
+   		margin: 0px;
         margin-top: 0px;
         margin-right-value: 0px;
         margin-bottom: 0px;
@@ -18,11 +18,21 @@ body {
         padding-left-ltr-source: physical;
         padding-left-rtl-source: physical;
         padding-right-ltr-source: physical;
-        padding-right-rtl-source: physical; */
+        padding-right-rtl-source: physical; 
 		font-family: Verdana,Arial,Helvetica,"Nimbus Sans L",sans-serif;
 		font-size:14px;
 }
 
+h2
+{
+	font-variant:small-caps
+}
+
+h3
+{
+	font-variant:small-caps
+}
+	
  #banner {   background: none repeat scroll 0% 0% rgb(255,255,255);
         background-color: rgb#FFF;
         background-image: none;
@@ -32,6 +42,7 @@ body {
         background-clip: border-box;
         background-origin: padding-box;
         background-size: auto auto;
+		margin:0;
 }
 
 #normal_div { 
@@ -53,11 +64,11 @@ body {
 	width: 100%;
 	float: left;
 	margin: 0 0 0em 0;
-	padding: 0;
+	padding: 0 0 0 0;
 	list-style: none;
 	background-color: rgb(211,228,233);
-	_border-bottom: 0px solid #ccc; 
-	_border-top: 0px solid #ccc; 
+	border-bottom: 0px solid #ccc; 
+	border-top: 0px solid #ccc; 
 	}
 #nav li {
 	float: left; }
@@ -74,25 +85,50 @@ body {
 
 pre
 	{
+	display:block;
 	background: #FFFFcc;
 	border: solid 1px;
-	padding-top: 1pt;
-	padding-left: 3pt;
-	padding-right: 3pt;
-	padding-bottom: 1pt;
+	padding-top: 0.5em;
+	padding-left: 0.5em;
+	padding-right: 0.5em;
+	padding-bottom: 0.5em;
 	margin-right: 1%;
 	margin-left: 1%;
 	margin-top: 0.25em;
 	margin-bottom: 0.25em;
 	border-color: rgb(204,204,204);
-	font-size:80%;
+	font-size:90%;
 	}
+
+.note
+	{
+	display:block;
+	background: rgb(255,235,255);
+	border: solid 1px;
+	padding-top: 0.5em;
+	padding-left: 0.5em;
+	padding-right: 0.5em;
+	padding-bottom: 0.5em;
+	margin-right: 1%;
+	margin-left: 1%;
+	margin-top: 0.25em;
+	margin-bottom: 0.25em;
+	border-color: rgb(204,204,204);
+	font-size:90%;
+	}
+.symbol {
+	font-family: "Times New Roman", Arial, Helvetica, sans-serif;
+	font-size: 100%;
+	display: inline;
+}
+	
 .codeword {
 	font-family: "Lucida Console", Monaco, monospace;
 	font-size: 100%;
+	font-weight:600;
 }
 	
-img
+p img .border
 {
     border: 1px solid;
 	border-color: rgb(204,204,204);

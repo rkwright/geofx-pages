@@ -1,0 +1,194 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>GMS</title>
+<link href="../styles.css" rel="stylesheet" type="text/css" />
+</head>
+
+<body>
+<div id="banner" >
+<img src="../images/GeoFX-Pages.png" width="1000" height="100" alt="Geo-F/X banner" />
+</div>
+
+<div style="left: 0px; position: absolute; width:100%; overflow:hidden; height:35px">
+<ul id="nav">
+	<li><a href="index.html">Home</a></li>
+	<li><a href="epubcrude.html">epubcrude</a></li>
+	<li><a href="GMS.html">GMS</a></li>
+	<li><a href="vtkview.html">vtkview</a></li>
+	<li><a href="http://www.geofx.com">geofx.com</a></li>
+</ul>
+</div>
+
+
+<div id="normal_div">
+<p class="note"><em>Note: This project is a work in progress and at present poorly documented. Bear with me.</em></p>
+<h2>Introduction</h2>
+<p>The goal of this tool is to provide an extensible system that allows one to build a chain of modules. The modules can contain data, open a file, process the input from other modules, output transformed data or generate a view or log, etc. The system takes one or more inputs, applies one or more processors to those inputs and genrates one or more views. The system is designed so the application of those processes can be iterative so that animated modeling is supported.</p>
+<p>The modules are implemented as Eclipse plugins in Java by implementing one or more standard interfaces. Views are similarly implemented as Eclipse plugins in Java. The sequencing of processes and views and the iteration process is managed by the GMS system.</p>
+<p>This application is implemented as a perspective in Eclipse. The perspective presents the user with any existing projects on the left in a standard Eclipse &quot;resource navigator&quot;. The central window is a multi-page editor containing:</p>
+<ul>
+  <li>an overview editor</li>
+  <li>a  datasets page, which lists current set of input datasets
+    <ul>
+      <li>This page is read-only and not particularly useful at this point</li>
+      </ul>
+  </li>
+  <li>a views page, which holds one or more views of the project</li>
+  <li>an XML editor with the current project file</li>
+  </ul>
+<p>The core of the GMS system is the &quot;project&quot;. A project can comprise: </p>
+<ul>
+    <li>a complete geographic system (spatial and non-spatial data)</li>
+    <li>some spatial or non-spatial data that is not a complete system (e.g. a set of DEMs or hydrometeorological data)</li>
+    <li>modeling parameters</li>
+    <li>all of the above</li>
+</ul>
+<p>The actual implementation of the models is in the modules. GMS provides a number of built-in modules, but clients can provide their own modules as long as they follow the guidelines. Note that while the orientation of the software is towards geographic (i.e. spatially oriented environmental) modeling, the system is so designed that many other types of systems can be modelled.</p>
+<p>For example, one could have a project that was a complete hydrological simulation of a basin complete with DEM data, hydrometeorological data, and modelling parameters. All this would be encompassed in one project. Alternatively, one could have the DEM data in one project and another project with the hydrometeorological data and a third project with the modelling parameters. The project with the modeling parameters would be the &quot;root&quot; project that would contain links to the data in the other two projects.</p>
+<p>A schematic view of the sources and processing of the data is shown below: </p>
+<p align="center"><img src="images/GMS_Pipeline.png" alt="GMS Pipline Schematic" width="324" height="423" /></p>
+<p>In effect, there are one or more data souces, which consist of parameters and data-sets. Data sets may be spatial or non-spatial (e.g. temporal) data. The data sources are read dynamically by GMS and then passed to one or more processors (in sequence) which act on the datasets, producing either new datasets or modifying the existing ones. The resulting datasets are then passed to renderers which render the resulting data into one or more views. </p>
+<p>Note that there is no requirement that the sequence be data &rarr; processor &rarr; view. It is entirely feasible that the sequence could be dataA &rarr; processorA &rarr; processorB &rarr; viewA &rarr;  dataB &rarr; processorC &rarr; viewB. The system is quite flexible and has been designed to support such scenarios.</p>
+<p>Optionally, after each pass by the processor(s), one or more parameters can be incremented and the processing repeated. Alternatively, after each loop the process is repeated with the new values held by the existing objects, which results in a iterative animation process.</p>
+<h3 >Acknowledgements</h3>
+<p >Virtually all of the work on this project was done by myself, but I would like to acknowledge that I have learned a lot from several sources, including <a href="http://wadeawalker.wordpress.com/2010/10/09/tutorial-a-cross-platform-workbench-program-using-java-opengl-and-eclipse/" title="Wade Walker's tutorial">Wade Walker's</a> tutorial on wrapping native libraries in Eclipse, <a href="http://gafferongames.com/" title="Gaffer on Games">Glen Fielder</a> for programming physics, and <a href="http://antigrain.com" title="Against the Grain">Maxim Shemenarov</a> for his Bezier implementation which I used in the PostScript implementation I wrote. The XMLEditor used in the perspective was written originally by <a href="http://www.realsolve.co.uk/site/tech/jface-text.php" title="Tutorial on XML Editing with JFace">Phil Zoio</a> though I have done a fair amount of whacking on it since.</p>
+<p class="warning"><b>Helping Out:</b> When you see any errors, omissions, or misleading info, please let me know. I am always willing to learn and want to make this document as accurate and helpful as possible. Contact me at <a href="mailto:rkwright@geofx.com?subject=Comments on OpenGL with JOGL">rkwright@geofx.com</a>. TIA.</p>
+<h2 >A Walkthrough</h2>
+<p >The simplest way to get a feel for GMS is to walk through a simple example, in this case, propagation of a temperature wave into the earth. The goal is to simulate the propagation of the wave with depth and through time.</p>
+<p >The physics of this is described by this equation:</p>
+<blockquote>
+  <p>T(z,t) = T<sub>0</sub> + A<sub>0</sub> * <em>exp</em>( d<sub>z</sub> / D ) * <em>sin</em>(t *<span class="symbol"> &omega;</span> -  d<sub>z</sub> / D)</p>
+  </blockquote>
+<p>where</p>
+<blockquote>
+  <p>T(z,t) = the temperature at a depth z and time t</p>
+  <p>T<sub>0</sub> = Air (and soil) temperature at the surface</p>
+  <p>A<sub>0</sub> = Amplitude of daily temperature wave at the surface</p>
+  <p> d<sub>z</sub> = depth at z, in metres</p>
+  <p>t = the time, in seconds</p>
+  <p>&omega; = normalizes the &ldquo;clock time&rdquo; t to the 2 *<span class="symbol"> &pi;</span> sine wave period</p>
+</blockquote>
+<p >and </p>
+<blockquote>
+  <p>D = the damping depth</p>
+  </blockquote>
+<p>which is a measure of the rate at which the temperature wave propagates through the soil, which is equal to </p>
+<blockquote>
+  <p>D = (2 * D<sub>T</sub> /<span class="symbol"> &omega;</span>)<sup>1/2</sup></p>
+</blockquote>
+<p >where </p>
+<blockquote>
+  <p>D<sub>T</sub> is the thermal conductivity of the soil.</p>
+  </blockquote>
+<p>In order to implement this, we need to know some constants such as the initial surface temperature, the daily amplitude the thermal conductivity of the soil. Then we need the set of depths we want the temperature calculated at and at what time intervals.</p>
+<h3>The Pipeline</h3>
+<p>The pipeline for this project consists of 5 modules:</p>
+<ul>
+  <li>Input Dataset</li>
+  <li>Tempwave Model</li>
+  <li>Rolling Grid</li>
+  <li>Line Graph</li>
+  <li>Polyline Graph</li>
+</ul>
+<h3>The Manifest</h3>
+<p>The manifest is simply a listing of the assets that may need to be loadedby GMS at runtime:</p>
+<pre>&lt;manifest&gt;   
+    &lt;item id=&quot;foo.depth.gza&quot; href=&quot;./data/depths.gza&quot; media-type=&quot;application/gms+gza&quot;/&gt;   
+&lt;/manifest&gt;</pre>
+<p>Note that the datatype is read automatically from the GZA file so there is no need to declare the type in the manifest.</p>
+<h3>The Input Dataset</h3>
+<p>Since the temperature will exponentially decrease with depth, it makes sense to have the depths increase more or less exponentially as well, so we choose the following depths for this case of 0.25, 0.5, 0.75, 1.0, 2.0, 5.0 and 10.0 metres.</p>
+<p>The dataset is packaged as a GZA file, which is a zip archive with some metadata (size of the array, type of data, 4x4 CTM, etc.). Details on GZA can be found later in this document.</p>
+<p class="note">Note: Though GMS currently only supports GZA files, consideration is being given to switching to <a href="#" title="HDF home page">HDF files</a>.</p>
+<p >The system reads the path from the manifest and loads the file into an array, as specified.</p>
+<pre >&lt;module object=&quot;com.geofx.gms.datasets.LoadDatasetModule&quot;&gt;
+    &lt;inputs&gt;
+        &lt;input field=&quot;filePath&quot; type=&quot;Grid&quot; idref=&quot;foo.depth.gza&quot;/&gt;
+    &lt;/inputs&gt;
+    &lt;outputs&gt;
+        &lt;output type=&quot;Grid&quot; id=&quot;foo.depths&quot;/&gt;
+    &lt;/outputs&gt;
+&lt;/module&gt;</pre>
+<h3 >Tempwave Model</h3>
+<p >The tempwave module is where the actual simulation is performed. It takes the output of the previous Dataset module as well as some fixed parameters (air temp, diurnal and annual amplitudes,thermal diffusivity). Each of these initial values are read from the XML and the object (TempWaveModule) fields are intialized with these values. The output is another array of objects (TempWaveData) which are  depth/temperature pairs.</p>
+<pre >&lt;module object=&quot;com.geofx.science.tempwave.TempWaveModule&quot;&gt;
+    &lt;init&gt;
+        &lt;set field=&quot;diffusivity&quot; type=&quot;Double&quot; value=&quot;1e-04&quot;/&gt;
+        &lt;set field=&quot;dailyAmplitude&quot; type=&quot;Double&quot; value=&quot;10.0&quot;/&gt;
+        &lt;set field=&quot;annualAmplitude&quot; type=&quot;Double&quot; value=&quot;10.0&quot;/&gt;
+        &lt;set field=&quot;meanTemp&quot; type=&quot;Double&quot; value=&quot;0.0&quot;/&gt;
+    &lt;/init&gt;
+    &lt;inputs&gt;
+        &lt;input field=&quot;depths&quot; type=&quot;Grid&quot; href=&quot;foo.depths&quot;/&gt;
+    &lt;/inputs&gt;
+    &lt;outputs&gt;
+        &lt;output field=&quot;tempwaveData&quot; type=&quot;com.geofx.gms.science.TempwaveData&quot; id=&quot;foo.profile&quot;/&gt;
+    &lt;/outputs&gt;
+&lt;/module&gt;</pre>
+<h3 >Rolling Grid Module</h3>
+<p >This module manages the overall dataset for the simulation. As the model is processed, a profile (the set of 10 depth/temperature values) are produced. These are stored in an array. As each new profile is produced it is stored in the array. Once the array has reached its upper limit, the last value in the array is deleted to make room for the new profile (hence the &quot;rolling&quot; nature of the dataset). The output of this module is the rolling-grid dataset.</p>
+<pre >&lt;module object=&quot;com.geofx.gms.datasets.RollingGridModule&quot;&gt;
+    &lt;init&gt;
+        &lt;set field=&quot;size&quot; type=&quot;Int&quot; value=&quot;84&quot;/&gt;
+    &lt;/init&gt;
+    &lt;inputs&gt;
+        &lt;input field=&quot;object&quot; type=&quot;com.geofx.gms.science.TempwaveData&quot; href=&quot;foo.profile&quot;/&gt;
+    &lt;/inputs&gt;
+    &lt;outputs&gt;
+        &lt;output field=&quot;array&quot; type=&quot;RollingGrid&quot; id=&quot;foo.temperatures&quot;/&gt;
+    &lt;/outputs&gt;
+&lt;/module&gt;
+</pre>
+<h3 >Line Graph Module</h3>
+<p >The line graph module plots one profile per time step. It's initializers are the parameters for the graph itself including the viewport dimensions, frame-color, symbol-color and the dimensions and labels for the axes. The inputs are the profile generated from the tempwave module and the depths which are the initial input dataset. As the result is drawn in a view, there are no outputs.</p>
+<pre >&lt;module object=&quot;com.geofx.gms.viewers.LineGraphModule&quot; tab=&quot;graph&quot;&gt;
+    &lt;init&gt;
+        &lt;set field=&quot;viewPort&quot; type=&quot;String&quot; value=&quot;-1, 0, 0, 1, -20, 10, 20, 0&quot;/&gt;
+        &lt;set field=&quot;frameColor&quot; type=&quot;Int&quot; value=&quot;#c0c0c0&quot;/&gt;
+        &lt;set field=&quot;symbolColor&quot; type=&quot;Int&quot; value=&quot;#00ff00&quot;/&gt;
+        &lt;set field=&quot;leftAxis&quot; type=&quot;String&quot; value=&quot;2, 0, 0, 2,depth (m)&quot;/&gt;
+        &lt;set field=&quot;bottomAxis&quot; type=&quot;String&quot; value=&quot;10, 0, 0, 2,temperature (deg C)&quot;/&gt;
+    &lt;/init&gt;
+    &lt;inputs&gt;
+        &lt;input field=&quot;xVector&quot; type=&quot;com.geofx.science.tempwave.TempwaveData&quot; href=&quot;foo.profile&quot;/&gt;
+        &lt;input field=&quot;yVector&quot; type=&quot;Grid&quot; href=&quot;foo.depths&quot;/&gt;
+    &lt;/inputs&gt;
+    &lt;outputs/&gt;
+&lt;/module&gt;</pre>
+<h3 >Polyline Module</h3>
+<p >The polyline module plots the contents of the rolling grid module, plotting all ten depths over time. The intializers are again the viewport, frame-color and axes labels. In addition, they specify the colors for each of the polylines. The input is the rolling grid array. Like the other graph, there are no outputs.</p>
+<pre >&lt;module object=&quot;com.geofx.gms.viewers.PolylineGraphModule&quot; tab=&quot;graph&quot;&gt;
+    &lt;init&gt;
+        &lt;set field=&quot;viewPort&quot; type=&quot;String&quot; value=&quot;-1, -1, 1, 0, 0, -20, 1, 20&quot;/&gt;
+        &lt;set field=&quot;frameColor&quot; type=&quot;Int&quot; value=&quot;#c0c0c0&quot;/&gt;
+        &lt;set field=&quot;bottomAxis&quot; type=&quot;String&quot; value=&quot;0, 0, 0, 2,time&quot;/&gt;
+        &lt;set field=&quot;leftAxis&quot; type=&quot;String&quot; value=&quot;10, 0, 0, 2,Temperature (deg C)&quot;/&gt;
+        &lt;set field=&quot;symbolColors&quot; type=&quot;Int&quot;&gt;
+            &lt;item value=&quot;#FFFFFF&quot;/&gt;
+            &lt;item value=&quot;#FF00FF&quot;/&gt;
+            &lt;item value=&quot;#00FF00&quot;/&gt;
+            &lt;item value=&quot;#FFFF00&quot;/&gt;
+            &lt;item value=&quot;#0000FF&quot;/&gt;
+            &lt;item value=&quot;#FFFFFF&quot;/&gt;
+            &lt;item value=&quot;#FF00FF&quot;/&gt;
+            &lt;item value=&quot;#00FF00&quot;/&gt;
+            &lt;item value=&quot;#FFFF00&quot;/&gt;
+            &lt;item value=&quot;#0000FF&quot;/&gt;
+        &lt;/set&gt;
+    &lt;/init&gt;
+    &lt;inputs&gt;
+        &lt;input field=&quot;array&quot; type=&quot;RollingGrid&quot; href=&quot;foo.temperatures&quot;/&gt;
+    &lt;/inputs&gt;
+&lt;outputs/&gt;</pre>
+<h3 >The Animation Loop</h3>
+<p >GMS implements an optional timing loop to control the behaviour of the simulation. There is no requirement to use this loop, but if one wishes to use it, the loop (animation) mechanism is available. In this case, the markup is:</p>
+<pre > &lt;sequence xmlns=&quot;http://www.geofx.com/2009/gms&quot; begin=&quot;0s&quot; end=&quot;2y&quot; step=&quot;4800s&quot;&gt;
+</pre>
+<p >This indicates that the &quot;loop&quot; (or sequence) begins at time 0 seconds, runs for 2 years (63,072,000 seconds) with a step of 4800 seconds (8 hours). As a result, the sequence consists of 13,140 steps. The animation loop controller executes the pipeline sequence outlined above each cycle. At the end of each cycle the graph output shown above will be displayed, continuing until all 13,140 steps have been executed. The resulting output looks like this:</p>
+<p ><img src="images/Animation_Grab.png" width="824" height="559" alt="Screen grab of animation sequence" /></p>
+<h2 >&nbsp;</h2>
+</div>
+</body>
+</html>
